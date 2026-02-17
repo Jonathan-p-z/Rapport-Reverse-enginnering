@@ -70,6 +70,20 @@ Objectif : transformer des observations en compréhension claire.
 - Si le statique dit “il contacte X” et le dynamique confirme : c’est solide.
 - Si ça ne colle pas : on ajuste l’hypothèse (packers, conditions, modes debug, etc.).
 
+### Comment je s’organise “en général”
+En pratique, pour ne pas partir dans tous les sens, On garde toujours la même structure de notes.
+
+Checklist rapide :
+- Cible + contexte (d’où vient le fichier ? quel objectif ?)
+- Hash (SHA‑256) + taille + OS/arch
+- Hypothèses (3–5 max) : réseau ? fichiers ? config ? crypto ?
+
+Modèle de notes (copiable dans un rapport) :
+- **Ce que on fait** : (outil + action)
+- **Ce que on observé** : (résultat concret)
+- **Ce que ça veut dire** : (interprétation)
+- **À vérifier ensuite** : (prochaine étape)
+
 ## 4) Exemples
 Ces mini‑cas sont orientés **compréhension / audit / interop**, sans contournement de protections.
 
@@ -133,14 +147,16 @@ But : décrire un échange client/serveur pour construire un outil compatible (a
 Livrable simple :
 - Tableau : endpoint → méthode → champs attendus → codes retour → erreurs.
 
-### Captures d’écran écrans
-Ceci sont des exemples d’observations que je peux faire à chaque étape. Se ne sont pas de vrai observation mais des cas pris sur internet pour illustrer.
+### Captures d’écran (exemples)
+Ces captures sont des **exemples d’observations** qu’on peut faire à chaque étape.
 
-Certaine choses à noter :
-- Certaine de ces exemple peuvent être réaliser sur des laboratoires spécifique du style rootme ou autre plateforme de CTF, mais il est aussi possible de trouver des exemples sur internet de pro mieux expliquer(ex : blog de chercheurs, vidéos de conférences, etc.) pour illustrer les différentes étapes du processus de reverse engineering.
+Important :
+- Idéalement, ce sont **tes propres captures** (VM/labo) : c’est ce qui rend le rapport crédible.
+- Si tu prends des images trouvées sur internet pour illustrer, il faut les utiliser uniquement comme “exemples” et éviter toute info sensible.
+
 **Figure 1 — Exemple d’analyse statique (Ghidra)**
 
-La vue “Decompile” d’une fonction intéressante (ex : parsing de config, envoi réseau) + le nom de la fonction.
+À capturer : la vue “Decompile” d’une fonction intéressante (ex : parsing de config, envoi réseau) + le nom de la fonction.
 
 ![Exemple – Ghidra décompilation](images/ghidra-decompilation.png)
 
@@ -162,14 +178,44 @@ Un breakpoint sur une API intéressante (réseau/fichier) + la pile d’appels (
 
 ![Exemple – x64dbg breakpoint](images/x64dbg-breakpoint.png)
 
-## 5) Outils (avec à quoi ça sert)
+## 5bis) Protections / difficultés courantes (et comment ça impacte l’analyse)
+Il existe des protections qui rendent le reverse plus long, surtout sur des logiciels “grand public” ou des malwares.
+Ici l’idée est de comprendre **ce que ça change** côté analyste, pas de “contourner”.
+
+### A) Protections anti‑lecture (statique)
+- **Obfuscation** : renomme les fonctions/variables, rend le code moins lisible (souvent sur scripts, .NET, Java, mobile).
+- **Packer / compression** : le code réel n’est pas visible directement dans le fichier, il est décompressé en mémoire au runtime.
+- **Suppression des symboles** : pas de noms de fonctions → navigation plus difficile.
+- **Chiffrement de chaînes** : URLs/chemins/keys ne sont pas visibles avec `strings`.
+
+Impact typique :
+- Le statique donne moins d’indices, donc on s’appuie davantage sur l’observation dynamique (fichiers, réseau, API call).
+
+### B) Protections anti‑analyse (dynamique)
+- **Anti-debug** : détecte un debugger et change de comportement.
+- **Anti‑VM / anti‑sandbox** : détecte l’environnement (VM, outils d’analyse) et se “bride”.
+- **Anti‑tamper / intégrité** : vérifie si le binaire a été modifié et peut refuser de démarrer.
+
+Impact typique :
+- On doit être encore plus propre sur l’environnement (VM “réaliste”, journaux propres) et multiplier les preuves (statique + dynamique) avant de conclure.
+
+### C) Côté défense (protéger un logiciel)
+En entreprise, on cherche surtout à :
+- **Réduire les secrets côté client** (éviter clés/API hardcodées dans le binaire).
+- **Déplacer la logique sensible côté serveur** quand c’est possible.
+- **Durcir** (signature, intégrité, logs, détection d’abus) et documenter.
+
+Limite importante :
+- Aucune protection n’est “magique”. Le but est plutôt de **ralentir** et de **détecter**.
+
+## 5) Outils 
 ### 5.1 Triage / identité du fichier
 - `sigcheck` (Sysinternals) : infos de signature/certificat sur Windows.
 - Detect It Easy (DIE) : détecter packers/compilateurs, infos rapides.
 - `sha256sum` / `hashdeep` : calculer des hashes (suivi d’échantillons).
 - `lief` / `pefile` (Python) : parser un PE/ELF pour automatiser l’inspection.
 
-### 5.2 Statique (lire sans exécuter)
+### 5.2 Statique 
 - Ghidra : décompiler/désassembler et naviguer dans les fonctions.
 - IDA / Binary Ninja : alternatives commerciales (souvent très ergonomiques).
 - `strings` : sortir les chaînes visibles d’un binaire.
@@ -258,6 +304,10 @@ Un breakpoint sur une API intéressante (réseau/fichier) + la pile d’appels (
 ### 8.7 Ressources pour apprendre (reverse / malware / bas niveau)
 - Malware Unicorn — Reverse Engineering 101 : https://malwareunicorn.org/workshops/re101.html
 - OpenSecurityTraining (cours RE, x86/x64, etc.) : https://opensecuritytraining.info/
+
+### 8.9 Références “défense / obfuscation” (niveau général)
+- OWASP MASVS (mobile security, notions d’obfuscation / reverse) : https://mas.owasp.org/
+- MITRE ATT&CK (techniques anti‑analyse / défense, description) : https://attack.mitre.org/
 
 ### 8.8 Livres souvent cités (références)
 - *Practical Malware Analysis* — Michael Sikorski, Andrew Honig
