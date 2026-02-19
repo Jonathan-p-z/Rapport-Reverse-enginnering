@@ -1,7 +1,7 @@
-# Rapport — Reverse engineering (logiciels)
+# Rapport — Reverse engineering
 
 Date : 17/02/2026  
-Contexte : Stage (notes de synthèse)  
+Contexte : Stage
 
 ## En bref
 Le reverse engineering (RE) c’est **comprendre un logiciel qui existe déjà**, souvent quand on n’a pas le code source.
