@@ -12,7 +12,7 @@ L'analyse a débuté par une **étude approfondie du code** à l'aide de **Binar
 
 ![Capture d'écran - Extraction des URLs](images/analyse-ghuidra.png)
 
-Bien que ces outils aient permis d'observer la structure du fichier, certaines fonctionnalités nepeuvent pas être analyser via c'est outil, nécessitant une transition vers :
+Bien que ces outils aient permis d'observer la structure du fichier, certaines fonctionnalités ne peuvent pas être analyser via c'est outil, nécessitant une transition vers :
 
 - le lancement du site de maniére sécuriser 
 - la décompilation spécifique
@@ -128,7 +128,7 @@ Ces problèmes peuvent être liés à :
 
 # 6. Conclusion
 
-Le malware **"Bowser-Classique"** est un **Spyware**.
+Le malware **"Bowser-Classique"** est toujours en cours d'analyse.
 
 Malgré un nom pouvant paraître anodin, il possède plusieurs capacités critiques :
 
@@ -137,5 +137,3 @@ Malgré un nom pouvant paraître anodin, il possède plusieurs capacités critiq
 - capture d'écran
 - communication avec un serveur C2
 - exécution de commandes à distance
-
-Ce malware dispose donc de **tous les outils nécessaires pour compromettre des comptes en ligne et surveiller l'activité d'un utilisateur en temps réel.**
