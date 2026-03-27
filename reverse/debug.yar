@@ -1,4 +1,3 @@
-cat << 'EOF' > Bowser_Final.yar
 rule Win32_Spyware_Bowser {
     meta:
         description = "Détecte le Stealer Bowser (Python)"
@@ -10,4 +9,3 @@ rule Win32_Spyware_Bowser {
     condition:
         any of them
 }
-EOF
