@@ -19,7 +19,21 @@ sha256sum bowser-classique.exe
 ```
 
 ### Comment fonctionne le malware
-Le malware s'autocopie dans C:\Windows\System32\bowser.exe qui utilise un dossier systéme qui permet de tromper l'utilisateur qui pensera qu'il s'agit d'un composant légitime de windows, il modifie aussi la base de registre pour crée la clé HKCU\Software\Microsoft\Windows\CurrentVersion\Run\Bowser
+Le malware détourne un fichier légitime qui est Driver  `C:\Windows\System32\bowser.sys` pour y mettre le malware, le fichier boswer.sys est normalement un fichier légitime, mais l'on peux vor que le fichier a été modifier, se qui nous donne l'indice que le fichier a été détourner.
+
+![fichier légitime de windows détourner](/images/fichier-détourner.png)
+
+C'est la que nous comprenont l'impact du malware, le fichier bowser.sys détourner utilise le ring 0 pour modifier les structure de données (les fichier qui utilise le ring 0 sont généralement les fichier les plus sensible de windows car donne accés au noyaux de la machine)
+Il modifie aussi la base de registre pour crée la clé `HKCU\Software\Microsoft\Windows\CurrentVersion\Run\Bowser`
+
+Le malware utilise msedge.sys comme marionette pour exfiltrer les données, l'analyse wireshark ma montré que c'est edge qui parle donc cela parait légitime et n'alerte pas.
+
+Le malware utilise plusieurs couche réseau comme :
+- la couche 7 : Le script vole les mot de passe et log le clavier
+- la couche 6 : utilisation de la cryptography poue chiffrer les preuves avant l'envoie
+- la couche 3/4 : le driver bowser.sys intercepte et manipule les paquets ip/tcp
+
+Se qui est a mon avis le plus fourbe c'est que si on se fie seulement a la date de modification du fichier bowser.sys on verra en général aucune différence car il ne sera pas modifier pour pas que l'on se doute que le fichier a été détourner/modifier, cette téchnique est assez fréquente dans se genre de malware et se nomme `Timestomping`
 
 ### Le spyware 
 Il fait du :
@@ -47,7 +61,7 @@ Est c'est a se moment que commence la fiche d'identité de la victime :
 
 ### Traces sur le système
 Fichiers crées automatiquement 
-- `C:\Windows\System32\bowser.exe`
+- `C:\Windows\System32\bowser.exe` (cela nécessite une élévation de pribilége, un user lambda ne pourra pas crée un fichier dans system32)
 - `C:\Windows\System32\screenshot.jpg` (Se sont des fichier temporaire qui sont utilisé pour stocker les capture d'écran avant l'envoie au server)
 
 Indice dans le Registre :
@@ -65,7 +79,7 @@ Un stealer est pas connu pour être gourmand coter performence, il veux rester d
 | Composant | Impact |
 | :--- | :---: |
 | CPU | Il peux y avoir des pics d'activité lors de l'extraction de mot de passe, sinon en général il y a une utilisation légére pour rester discret |
-| Réseau | Fuites de données, le processus bowser.execrée des connexion HTTPS sortantes réguliéres vers ducking.org, sa peux être une de ralentissement  |
+| Réseau | Fuites de données, le processus bowser.execrée des connexion HTTPS sortantes réguliéres vers duckdns.org, sa peux être une de ralentissement  |
 | Disque | Il y a une forte lecture des fichiers de base de données des navigateurs au lancement |
 | RAM | L'impact sur la RAM  est quand même trés minimes contrairement au autres (entre 50 - 150 Mo) uniquement pour maintenir l'interpréteur et les bibliothéque d'espionnage active |
 
@@ -162,11 +176,13 @@ Il y a d'autre d'autre preuve sur cette librarie que c'est un malware comme par 
 Il y a aussi aucune interface utilisateur importer se qui est quand même bizarre quand on est sensée être un navigateur, le programme est fait pour tourner en silence sans que l'on s'en rend compte.
 
 Sqlite3 et Win32gui sont importer pour une seule chose : le vol des identifiant de l'utilisateur 
+
+L'import ctype est utilisé par le script python pour envoyer des commandes au driver bowser.sys, c'est sa qui fait le pont entre le script python et le noyaux de windows
 ### Recommendation de rémédition 
 
-Premiérement le fichier se nomme bowser-classique.exe se qui n'ai pas un navigateur traditionnelle donc cela serai incensé de l'installer, mais imaginons que nous l'avons insaller bien que le processus soit facile a arrêter manuellement, les vol de mot de passe sont réellement la, il suffit simplement de kill le service dans la barre des tâches et le problême sera régler.
+Premiérement le fichier se nomme bowser-classique.exe se qui n'ai pas un navigateur traditionnelle donc cela serai incensé de l'installer, mais imaginons que nous l'avons insaller bien que le processus soit facile a arrêter manuellement avec les bonne connaissances (oublions pas que le malware et de niveau ring 0..), les vol de mot de passe sont réellement la ainsi que sont implication dans le noyaux du windows, il suffit de kill le service dans la barre des tâches mais bowser.sys a la capacité de pouboir mentir au gestionnaire des tâche, je recommence donc d'ouvrir un terminal en administrateur et taper cette commande `sc delete bowser`.
 
-Supprimer ensuite le fichier dans notre pc dans `C:\Windows\System32\` (ne pas supprimer le dossier sa serai bête de finir avec un windows plus fonctionnel..) 
+Supprimer ensuite le fichier dans notre pc dans `C:\Windows\System32\` (ne pas supprimer le dossier sa serai bête de finir avec un windows plus fonctionnel..) mais vu que windows protége ces driver il ne vous laissera probablement pas faire, puis a la base bowser.sys est un fichier de windows a la base, le malware a seulement détourner sont utilité, je conseillerai donc de faire `sfc /scannow` cette commande permet de remettre le vrai driver sain à sa place automatiquement
 
 Il est important de supprimer la clé de registre de démarrage automatique 
 Pour le supprimer vous avez plusieurs option mais la plus simple est la suivante :
@@ -175,6 +191,8 @@ Pour le supprimer vous avez plusieurs option mais la plus simple est la suivante
 3. Naviguer dans l'arborescence à gauche pour suivre le chemin `HKEY_CURRENT_USER > Software > Microsoft > Windows > CurrentVersion > Run`
 4. Chercher une logne noter bowser
 5. Faire clic droit et supprimer simplement 
+
+Se que je conseillerai aprés sa et de redémrrer windows en mode sans echec, cela réparera les driver classique de windows, cela est l'option la plus safe
 
 #### Mesures a prendre
 - Il sera forcément conseillé de changer les mot de passe de tout les compte que l'on a enregistré sur notre navigateur, car ils sont certainement était envoyer dans un serveur du hacker
